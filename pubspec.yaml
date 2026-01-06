@@ -1,0 +1,42 @@
+name: employee_tracker
+description: "Employee tracking app (offline + online)"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI
+  cupertino_icons: ^1.0.8
+
+  # Location
+  geolocator: ^10.1.0
+  permission_handler: ^11.3.0
+
+  # Local storage
+  shared_preferences: ^2.2.3
+  sqflite: ^2.3.3
+  path: ^1.9.0
+
+  # Device info
+  device_info_plus: ^10.1.0
+
+  # Notifications (foreground service)
+  flutter_local_notifications: ^17.1.2
+
+  # Backend (DB only, no auth)
+  supabase_flutter: ^2.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
