@@ -8,11 +8,12 @@ plugins {
 android {
     namespace = "com.example.employee_tracker"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"  // ✅ FIX 1: Set explicit NDK version
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true  // ✅ FIX 2: Enable desugaring
     }
 
     kotlinOptions {
@@ -41,4 +42,8 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")  // ✅ FIX 3: Add desugaring dependency
 }

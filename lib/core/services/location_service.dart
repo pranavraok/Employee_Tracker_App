@@ -1,9 +1,17 @@
 import 'package:geolocator/geolocator.dart';
+import '../../employee/local_storage/repositories/location_repository.dart';
+import 'work_hours_service.dart';
 import 'dart:developer';
 
 class LocationService {
   static Future<void> captureLocation() async {
     try {
+      // 🆕 CHECK WORK HOURS FIRST
+      if (!WorkHoursService.isWithinWorkHours()) {
+        log('⏸️ Skipping GPS capture - Outside work hours');
+        return;
+      }
+
       // 1️⃣ Ensure location service is ON
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
@@ -33,17 +41,20 @@ class LocationService {
       // 5️⃣ UTC timestamp (IMPORTANT)
       final recordedAtUtc = DateTime.now().toUtc();
 
-      // 6️⃣ TEMP: Log it (replace with DB/server in next steps)
-      log(
-        '📍 LOCATION | lat=$latitude, lng=$longitude, '
-            'accuracy=${accuracy.toStringAsFixed(1)}m, '
-            'time=$recordedAtUtc',
+      // 6️⃣ Save to SQLite
+      final saved = await LocationRepository.saveLocation(
+        latitude: latitude,
+        longitude: longitude,
+        accuracy: accuracy,
+        recordedAt: recordedAtUtc,
       );
 
-      // NEXT STEP (not yet):
-      // - if online -> send to Supabase
-      // - else -> save locally
-
+      if (saved) {
+        log(
+          '📍 Location saved | lat=$latitude, lng=$longitude, '
+              'accuracy=${accuracy.toStringAsFixed(1)}m',
+        );
+      }
     } catch (e) {
       log('⚠️ Location error: $e');
     }

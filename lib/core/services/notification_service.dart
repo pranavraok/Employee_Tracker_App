@@ -1,4 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'work_hours_service.dart';
 
 class NotificationService {
   static final _notifications = FlutterLocalNotificationsPlugin();
@@ -10,6 +11,8 @@ class NotificationService {
   }
 
   static Future<void> showTrackingNotification() async {
+    final status = WorkHoursService.getWorkStatusMessage();
+
     const androidDetails = AndroidNotificationDetails(
       'tracking_channel',
       'Employee Tracking',
@@ -21,8 +24,27 @@ class NotificationService {
 
     await _notifications.show(
       1,
-      'Tracking enabled',
-      'Work-hours location tracking is active',
+      'Employee Tracker',
+      status,
+      const NotificationDetails(android: androidDetails),
+    );
+  }
+
+  // 🆕 Update notification dynamically
+  static Future<void> updateNotification(String message) async {
+    const androidDetails = AndroidNotificationDetails(
+      'tracking_channel',
+      'Employee Tracking',
+      channelDescription: 'Location tracking status',
+      importance: Importance.low,
+      priority: Priority.low,
+      ongoing: true,
+    );
+
+    await _notifications.show(
+      1,
+      'Employee Tracker',
+      message,
       const NotificationDetails(android: androidDetails),
     );
   }

@@ -1,6 +1,4 @@
-import 'package:employee_tracker/admin/employee/screens/employee_detail_screen.dart';
 import 'package:flutter/material.dart';
-
 import 'routes/app_routes.dart';
 import 'auth/screens/login_screen.dart'; // Employee setup screen
 import 'employee/tracking/screens/employee_tracking_screen.dart';
@@ -23,17 +21,14 @@ class MyApp extends StatelessWidget {
         colorSchemeSeed: Colors.blue,
         useMaterial3: true,
       ),
-
-      // 👇 Decide first screen
+      // 👇 FIX: Correct routing
       home: isEmployeeRegistered
-          ? const EmployeeTrackingScreen()
-          : const EmployeeDetailScreen(),
+          ? const EmployeeTrackingScreen()  // ✅ If registered → tracking
+          : const LoginScreen(),            // ✅ If NOT registered → login/setup
 
       // Named routes
       routes: {
         ...AppRoutes.routes,
-
-        // Admin entry (Option B)
         '/admin-password': (_) => const AdminPasswordScreen(),
       },
     );
