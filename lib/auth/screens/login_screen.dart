@@ -1,3 +1,4 @@
+import 'package:employee_tracker/core/services/device_admin_service.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,12 +21,28 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _selectedFirm;
   bool _isLoading = false;
   String? _error;
-
   final List<String> _firms = [
     'ElectroHeat Systems',
     'ElectroTech Services',
     'SolarTech Industries',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfAlreadyRegistered();
+  }
+
+  // ✅ Check if already registered - redirect to tracking
+  Future<void> _checkIfAlreadyRegistered() async {
+    final prefs = await SharedPreferences.getInstance();
+    final employeeId = prefs.getString('employee_id');
+
+    if (employeeId != null && mounted) {
+      // Already registered - go directly to tracking
+      Navigator.pushReplacementNamed(context, '/tracking');
+    }
+  }
 
   Future<void> _register() async {
     // Validation
@@ -96,8 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
           'name': _nameController.text.trim(),
           'phone': _phoneController.text.trim(),
           'firm': _selectedFirm,
-        })
-            .eq('id', employeeId);
+        }).eq('id', employeeId);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -159,10 +175,9 @@ class _LoginScreenState extends State<LoginScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('employee_id', employeeId);
 
+      // 5️⃣ Initialize and start foreground service
       ForegroundTrackingService.initializeService();
       await ForegroundTrackingService.startService();
-
-
 
       // 6️⃣ Request Device Admin (prevent uninstall)
       await _requestDeviceAdmin();
@@ -215,20 +230,24 @@ class _LoginScreenState extends State<LoginScreen> {
         );
 
         if (shouldRequest == true) {
-          // Launch device admin settings
-          final intent = AndroidIntent(
-            action: 'android.app.action.ADD_DEVICE_ADMIN',
-            componentName: 'com.example.employee_tracker/.DeviceAdminReceiver',
-            arguments: <String, dynamic>{
-              'android.app.extra.DEVICE_ADMIN':
-              'com.example.employee_tracker/.DeviceAdminReceiver',
-              'android.app.extra.ADD_EXPLANATION':
-              'Enable to protect employee tracking app',
-            },
-            flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
-          );
+          // Request device admin via service
+          final isAdmin = await DeviceAdminService.requestDeviceAdmin();
 
-          await intent.launch();
+          if (!isAdmin && mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text('Security Required'),
+                content: Text('Please enable device admin to prevent app uninstallation.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('OK'),
+                  ),
+                ],
+              ),
+            );
+          }
         }
       }
     } catch (e) {
@@ -285,7 +304,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           color: Colors.blue,
                         ),
                       ),
-
                       const SizedBox(height: 30),
 
                       // Title
@@ -303,9 +321,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 8),
-
                       const Text(
                         'Join the Electro Group workforce',
                         style: TextStyle(
@@ -313,7 +329,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           color: Colors.white70,
                         ),
                       ),
-
                       const SizedBox(height: 40),
 
                       // Form Card
@@ -346,7 +361,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               enabled: !_isLoading,
                             ),
-
                             const SizedBox(height: 16),
 
                             // Phone Number Field
@@ -364,7 +378,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               keyboardType: TextInputType.phone,
                               enabled: !_isLoading,
                             ),
-
                             const SizedBox(height: 16),
 
                             // Firm Dropdown
@@ -421,7 +434,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ],
-
                             const SizedBox(height: 24),
 
                             // Register Button
@@ -456,7 +468,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ),
-
                             const SizedBox(height: 16),
 
                             // Privacy Note
@@ -529,4 +540,5 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 }
+
 

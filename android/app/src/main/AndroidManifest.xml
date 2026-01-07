@@ -64,9 +64,9 @@
             </intent-filter>
         </receiver>
 
-        <!-- Device Admin Receiver (Prevent uninstall) -->
+        <!-- Device Admin Receiver (Prevent uninstall) - ONLY ONE NEEDED -->
         <receiver
-            android:name=".DeviceAdminReceiver"
+            android:name=".MyDeviceAdminReceiver"
             android:permission="android.permission.BIND_DEVICE_ADMIN"
             android:exported="true">
             <meta-data
@@ -74,8 +74,6 @@
                 android:resource="@xml/device_admin" />
             <intent-filter>
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
-                <action android:name="android.app.action.DEVICE_ADMIN_DISABLED" />
-                <action android:name="android.app.action.DEVICE_ADMIN_DISABLE_REQUESTED" />
             </intent-filter>
         </receiver>
 
