@@ -161,7 +161,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                     // ✅ ADDED: Tagline
                     const Text(
-                      'Real-Time GPS Tracking & Attendance',
+                      'Real-Time GPS Tracking',
                       style: TextStyle(
                         fontSize: 15,
                         color: Colors.white70,
