@@ -1,6 +1,5 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'dart:developer';
 
 class DatabaseHelper {
   static Database? _database;
@@ -17,13 +16,13 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2, // 🔥 CHANGED FROM 1 TO 2
+      version: 1,
       onCreate: _onCreate,
-      onUpgrade: _onUpgrade, // 🔥 ADDED UPGRADE HANDLER
     );
   }
 
   static Future<void> _onCreate(Database db, int version) async {
+    // Create locations table
     await db.execute('''
       CREATE TABLE locations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,18 +35,7 @@ class DatabaseHelper {
       )
     ''');
 
-    log('✅ Database table created successfully');
-  }
-
-  // 🔥 NEW: Handle database upgrades
-  static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    log('🔄 Upgrading database from v$oldVersion to v$newVersion');
-
-    if (oldVersion < 2) {
-      // Add is_synced column if upgrading from version 1
-      await db.execute('ALTER TABLE locations ADD COLUMN is_synced INTEGER DEFAULT 0');
-      log('✅ Added is_synced column');
-    }
+    print('✅ Database table created successfully');
   }
 
   static Future<void> closeDatabase() async {
@@ -57,5 +45,3 @@ class DatabaseHelper {
     }
   }
 }
-
-

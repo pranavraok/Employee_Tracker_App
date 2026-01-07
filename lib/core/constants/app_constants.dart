@@ -1,6 +1,6 @@
 class AppConstants {
   // Admin Access
-  static const String adminPassword = 'admin@2026';
+  static const String adminPassword = 'electro@123';
 
   // Supabase Configuration
   static const String supabaseUrl = 'https://lbysdpwfavtszcdbxwac.supabase.co';
@@ -11,7 +11,7 @@ class AppConstants {
 
   // Work Hours (24-hour format)
   static const int workStartHour = 9;  // 9 AM
-  static const int workEndHour = 24;   // 6 PM
+  static const int workEndHour = 18;   // 6 PM
 
   // Work Days (1 = Monday, 7 = Sunday)
   static const List<int> workDays = [1, 2, 3, 4, 5, 6]; // Monday-Saturday

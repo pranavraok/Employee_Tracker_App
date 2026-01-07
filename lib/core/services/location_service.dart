@@ -4,7 +4,7 @@ import 'work_hours_service.dart';
 import 'dart:developer';
 
 class LocationService {
-  static Future<void> captureLocation() async {
+  static Future<void> captureLocation(String employeeId) async {
     try {
       // 🆕 CHECK WORK HOURS FIRST
       if (!WorkHoursService.isWithinWorkHours()) {
@@ -38,20 +38,17 @@ class LocationService {
       final longitude = position.longitude;
       final accuracy = position.accuracy;
 
-      // 5️⃣ UTC timestamp (IMPORTANT)
-      final recordedAtUtc = DateTime.now().toUtc();
-
-      // 6️⃣ Save to SQLite
-      final saved = await LocationRepository.saveLocation(
+      // 5️⃣ Save to SQLite using insertLocation
+      final savedId = await LocationRepository.insertLocation(
+        employeeId: employeeId,
         latitude: latitude,
         longitude: longitude,
         accuracy: accuracy,
-        recordedAt: recordedAtUtc,
       );
 
-      if (saved) {
+      if (savedId > 0) {
         log(
-          '📍 Location saved | lat=$latitude, lng=$longitude, '
+          '📍 Location saved | ID=$savedId | lat=$latitude, lng=$longitude, '
               'accuracy=${accuracy.toStringAsFixed(1)}m',
         );
       }
@@ -60,3 +57,4 @@ class LocationService {
     }
   }
 }
+

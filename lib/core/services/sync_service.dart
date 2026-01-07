@@ -1,81 +1,65 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../employee/local_storage/repositories/location_repository.dart';
-import '../constants/app_constants.dart';
 import 'connectivity_service.dart';
-import 'dart:developer';
+import 'dart:developer' as dev;
 
 class SyncService {
-  static bool _isSyncing = false;
-
-  // Start sync process
   static Future<void> syncLocations() async {
-    if (_isSyncing) {
-      log('⏳ Sync already in progress, skipping...');
-      return;
-    }
-
-    _isSyncing = true;
-
     try {
-      // 1️⃣ Check internet
-      final isOnline = await ConnectivityService.isConnected();
-      if (!isOnline) {
-        log('📵 No internet. Sync skipped.');
-        _isSyncing = false;
+      dev.log('🔄 Starting sync process...');
+
+      // Check internet connectivity
+      final isConnected = await ConnectivityService.isConnected();
+      if (!isConnected) {
+        dev.log('📵 No internet, skipping sync');
         return;
       }
 
-      // 2️⃣ Get unsynced count
-      final unsyncedCount = await LocationRepository.getUnsyncedCount();
-      if (unsyncedCount == 0) {
-        log('✅ No locations to sync');
-        _isSyncing = false;
+      // Get unsynced locations
+      final unsyncedLocations = await LocationRepository.getUnsyncedLocations();
+
+      if (unsyncedLocations.isEmpty) {
+        dev.log('✅ No locations to sync');
+
+        // Debug: Check total locations
+        final allLocations = await LocationRepository.getAllLocations();
+        dev.log('📊 Total locations in DB: ${allLocations.length}');
         return;
       }
 
-      log('🔄 Starting sync: $unsyncedCount unsynced locations');
+      dev.log('🔄 Syncing ${unsyncedLocations.length} locations...');
 
-      // 3️⃣ Fetch batch
-      final locations = await LocationRepository.getUnsyncedLocations(
-        limit: AppConstants.syncBatchSize,
-      );
-
-      if (locations.isEmpty) {
-        _isSyncing = false;
-        return;
-      }
-
-      // 4️⃣ Prepare data for Supabase
-      final dataToUpload = locations.map((loc) {
-        return {
-          'employee_id': loc['employee_id'],
-          'latitude': loc['latitude'],
-          'longitude': loc['longitude'],
-          'accuracy': loc['accuracy'],
-          'recorded_at': loc['recorded_at'],
-        };
-      }).toList();
-
-      // 5️⃣ Upload to Supabase
       final supabase = Supabase.instance.client;
-      await supabase.from('locations').insert(dataToUpload);
+      final List<int> syncedIds = [];
 
-      // 6️⃣ Mark as synced
-      final ids = locations.map((loc) => loc['id'] as int).toList();
-      await LocationRepository.markAsSynced(ids);
+      // Upload each location
+      for (final location in unsyncedLocations) {
+        try {
+          dev.log('📤 Uploading location: ${location['id']} for employee: ${location['employee_id']}');
 
-      log('✅ Successfully synced ${locations.length} locations');
+          await supabase.from('locations').insert({
+            'employee_id': location['employee_id'],
+            'latitude': location['latitude'],
+            'longitude': location['longitude'],
+            'accuracy': location['accuracy'],
+            'recorded_at': location['recorded_at'],
+          });
 
-      // 7️⃣ If more exist, sync again
-      if (unsyncedCount > AppConstants.syncBatchSize) {
-        log('🔄 More locations pending. Syncing next batch...');
-        await Future.delayed(const Duration(seconds: 2));
-        await syncLocations(); // Recursive call
+          syncedIds.add(location['id'] as int);
+          dev.log('✅ Synced location ${location['id']}');
+        } catch (e) {
+          dev.log('❌ Failed to sync location ${location['id']}: $e');
+        }
+      }
+
+      // Mark as synced
+      if (syncedIds.isNotEmpty) {
+        await LocationRepository.markAsSynced(syncedIds);
+        dev.log('✅ Marked ${syncedIds.length} locations as synced');
       }
     } catch (e) {
-      log('❌ Sync error: $e');
-    } finally {
-      _isSyncing = false;
+      dev.log('❌ Sync error: $e');
     }
   }
 }
+

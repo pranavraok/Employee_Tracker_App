@@ -1,11 +1,10 @@
 name: employee_tracker
-description: "Employee tracking app (offline + online)"
+description: "A new Flutter project."
 publish_to: 'none'
-
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ^3.5.4
 
 dependencies:
   flutter:
@@ -14,43 +13,54 @@ dependencies:
   # UI
   cupertino_icons: ^1.0.8
 
-  # Maps
+  # Backend & Database
+  supabase_flutter: ^2.0.0
+  sqflite: ^2.3.0
+  path: ^1.8.3
+
+  # Location & Permissions
+  geolocator: ^11.0.0
+  permission_handler: ^11.1.0
+  geocoding: ^3.0.0
+
+  # Background Services
+  flutter_foreground_task: ^8.0.0
+  flutter_local_notifications: ^18.0.1
+
+  # Device Info & Storage
+  device_info_plus: ^10.0.1
+  shared_preferences: ^2.2.2
+
+  # Network & Connectivity
+  connectivity_plus: ^5.0.2
+  http: ^1.2.0
+
+  # Map & Location Display
   flutter_map: ^6.1.0
   latlong2: ^0.9.0
 
-  # Network
-  connectivity_plus: ^6.1.0
-
-  # Date/Time
+  # Utilities
   intl: ^0.19.0
 
-  # Location
-  geolocator: ^10.1.0
-  permission_handler: ^11.3.0
-
-  # Local storage
-  shared_preferences: ^2.2.3
-  sqflite: ^2.3.3
-  path: ^1.9.0
-
-  # Device info
-  device_info_plus: ^10.1.0
-
-  # Notifications (foreground service)
-  flutter_local_notifications: ^17.1.2
-
-  # Backend (DB only, no auth)
-  supabase_flutter: ^2.5.0
+  # Android Specific
+  android_intent_plus: ^4.0.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+# App Icon Configuration
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
 
 flutter:
   uses-material-design: true
 
-  # ✅ Assets
+
   assets:
     - assets/images/logo.png
 

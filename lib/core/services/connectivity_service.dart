@@ -4,23 +4,26 @@ import 'dart:developer';
 class ConnectivityService {
   static final Connectivity _connectivity = Connectivity();
 
-  // Check if internet is available
+  /// Check if device has any active internet connection
   static Future<bool> isConnected() async {
     try {
-      final result = await _connectivity.checkConnectivity();
-      final connected = result.first != ConnectivityResult.none;
-      log(connected ? '🌐 Internet: ONLINE' : '📵 Internet: OFFLINE');
-      return connected;
+      // In v6.1.2, checkConnectivity() returns ConnectivityResult (not List)
+      final ConnectivityResult result = await _connectivity.checkConnectivity();
+
+      final bool hasConnection = result != ConnectivityResult.none;
+
+      log(hasConnection ? '🌐 Internet: ONLINE' : '📵 Internet: OFFLINE');
+      return hasConnection;
     } catch (e) {
       log('❌ Connectivity check error: $e');
       return false;
     }
   }
 
-  // Listen to connectivity changes
+  /// Stream that emits connectivity status changes
   static Stream<bool> get onConnectivityChanged {
-    return _connectivity.onConnectivityChanged.map((resultList) {
-      return resultList.isNotEmpty && resultList.first != ConnectivityResult.none;
+    return _connectivity.onConnectivityChanged.map((ConnectivityResult result) {
+      return result != ConnectivityResult.none;
     });
   }
 }

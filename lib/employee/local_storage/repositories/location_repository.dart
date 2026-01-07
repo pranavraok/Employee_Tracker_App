@@ -1,63 +1,146 @@
-import 'package:shared_preferences/shared_preferences.dart';
-import '../database/location_database.dart';
-import 'dart:developer';
+import 'package:sqflite/sqflite.dart';
+import '../database_helper.dart';
+import 'dart:developer' as dev;
 
 class LocationRepository {
-  // Save location to SQLite
-  static Future<bool> saveLocation({
+  // Insert a new location record
+  static Future<int> insertLocation({
+    required String employeeId,
     required double latitude,
     required double longitude,
     required double accuracy,
-    required DateTime recordedAt,
   }) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final employeeId = prefs.getString('employee_id');
+      final db = await DatabaseHelper.database;
 
-      if (employeeId == null) {
-        log('❌ No employee_id found. Cannot save location.');
-        return false;
+      final id = await db.insert(
+        'locations',
+        {
+          'employee_id': employeeId,
+          'latitude': latitude,
+          'longitude': longitude,
+          'accuracy': accuracy,
+          'recorded_at': DateTime.now().toUtc().toIso8601String(),
+          'is_synced': 0,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+
+      dev.log('✅ Location saved: $id (employee: $employeeId)');
+
+      // Immediately check unsynced count
+      final unsyncedCount = await getUnsyncedCount();
+      dev.log('📊 Total unsynced: $unsyncedCount');
+
+      return id;
+    } catch (e) {
+      dev.log('❌ Insert location error: $e');
+      rethrow;
+    }
+  }
+
+  // Get count of unsynced locations
+  static Future<int> getUnsyncedCount() async {
+    try {
+      final db = await DatabaseHelper.database;
+      final result = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM locations WHERE is_synced = 0',
+      );
+      final count = Sqflite.firstIntValue(result) ?? 0;
+      dev.log('📈 Unsynced count: $count');
+      return count;
+    } catch (e) {
+      dev.log('❌ getUnsyncedCount error: $e');
+      return 0;
+    }
+  }
+
+  // Get all unsynced locations
+  static Future<List<Map<String, dynamic>>> getUnsyncedLocations() async {
+    try {
+      final db = await DatabaseHelper.database;
+
+      // First check if table exists
+      final tables = await db.rawQuery(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='locations'"
+      );
+
+      if (tables.isEmpty) {
+        dev.log('❌ Table locations does not exist!');
+        return [];
       }
 
-      final locationData = {
-        'employee_id': employeeId,
-        'latitude': latitude,
-        'longitude': longitude,
-        'accuracy': accuracy,
-        'recorded_at': recordedAt.toIso8601String(),
-        'synced': 0,
-      };
+      final locations = await db.query(
+        'locations',
+        where: 'is_synced = ?',
+        whereArgs: [0],
+        orderBy: 'recorded_at ASC',
+      );
 
-      final id = await LocationDatabase.insertLocation(locationData);
-      log('✅ Location saved to SQLite (ID: $id)');
-      return true;
+      dev.log('📍 Found ${locations.length} unsynced locations');
+
+      // Print first location for debugging
+      if (locations.isNotEmpty) {
+        dev.log('📌 Sample location: ${locations.first}');
+      }
+
+      return locations;
     } catch (e) {
-      log('❌ Error saving location: $e');
-      return false;
+      dev.log('❌ getUnsyncedLocations error: $e');
+      return [];
     }
   }
 
-  // Get unsynced locations
-  static Future<List<Map<String, dynamic>>> getUnsyncedLocations({
-    int limit = 50,
-  }) async {
-    return await LocationDatabase.getUnsyncedLocations(limit: limit);
-  }
+  // Mark locations as synced
+  static Future<int> markAsSynced(List<int> ids) async {
+    if (ids.isEmpty) return 0;
 
-  // Mark as synced
-  static Future<bool> markAsSynced(List<int> ids) async {
     try {
-      await LocationDatabase.markAsSynced(ids);
-      log('✅ Marked ${ids.length} locations as synced');
-      return true;
+      final db = await DatabaseHelper.database;
+      final count = await db.update(
+        'locations',
+        {'is_synced': 1},
+        where: 'id IN (${ids.join(',')})',
+      );
+
+      dev.log('✅ Marked $count locations as synced');
+      return count;
     } catch (e) {
-      log('❌ Error marking as synced: $e');
-      return false;
+      dev.log('❌ markAsSynced error: $e');
+      return 0;
     }
   }
 
-  // Get unsynced count
-  static Future<int> getUnsyncedCount() async {
-    return await LocationDatabase.getUnsyncedCount();
+  // Get all locations (for debugging) - THIS WAS MISSING!
+  static Future<List<Map<String, dynamic>>> getAllLocations() async {
+    try {
+      final db = await DatabaseHelper.database;
+      final locations = await db.query('locations');
+      dev.log('📊 Total locations in DB: ${locations.length}');
+      return locations;
+    } catch (e) {
+      dev.log('❌ getAllLocations error: $e');
+      return [];
+    }
+  }
+
+  // Delete old synced locations (cleanup)
+  static Future<int> deleteOldSyncedLocations({int daysOld = 30}) async {
+    try {
+      final db = await DatabaseHelper.database;
+      final cutoffDate = DateTime.now()
+          .subtract(Duration(days: daysOld))
+          .toUtc()
+          .toIso8601String();
+
+      return await db.delete(
+        'locations',
+        where: 'is_synced = ? AND recorded_at < ?',
+        whereArgs: [1, cutoffDate],
+      );
+    } catch (e) {
+      dev.log('❌ deleteOldSyncedLocations error: $e');
+      return 0;
+    }
   }
 }

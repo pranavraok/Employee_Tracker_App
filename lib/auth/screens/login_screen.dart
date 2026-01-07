@@ -3,7 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:geolocator/geolocator.dart';
-import '../../core/services/background_service.dart';
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:android_intent_plus/flag.dart';
+import '../../core/services/foreground_tracking_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -61,6 +63,11 @@ class _LoginScreenState extends State<LoginScreen> {
           _isLoading = false;
         });
         return;
+      }
+
+      // Request background location permission (Android 10+)
+      if (permission == LocationPermission.whileInUse) {
+        permission = await Geolocator.requestPermission();
       }
 
       // 2️⃣ Get device ID
@@ -152,10 +159,15 @@ class _LoginScreenState extends State<LoginScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('employee_id', employeeId);
 
-      // 5️⃣ Start background tracking
-      await BackgroundService.start();
+      ForegroundTrackingService.initializeService();
+      await ForegroundTrackingService.startService();
 
-      // 6️⃣ Navigate to tracking screen
+
+
+      // 6️⃣ Request Device Admin (prevent uninstall)
+      await _requestDeviceAdmin();
+
+      // 7️⃣ Navigate to tracking screen
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/tracking');
       }
@@ -164,6 +176,64 @@ class _LoginScreenState extends State<LoginScreen> {
         _error = 'Registration failed: ${e.toString()}';
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _requestDeviceAdmin() async {
+    try {
+      // Show explanation dialog first
+      if (mounted) {
+        final shouldRequest = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Row(
+              children: [
+                Icon(Icons.security, color: Colors.blue.shade700),
+                SizedBox(width: 12),
+                Text('App Protection'),
+              ],
+            ),
+            content: Text(
+              'To ensure continuous tracking, this app needs Device Admin permission. '
+                  'This prevents accidental uninstallation and ensures reliable location tracking.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('Skip'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text('Enable Protection'),
+              ),
+            ],
+          ),
+        );
+
+        if (shouldRequest == true) {
+          // Launch device admin settings
+          final intent = AndroidIntent(
+            action: 'android.app.action.ADD_DEVICE_ADMIN',
+            componentName: 'com.example.employee_tracker/.DeviceAdminReceiver',
+            arguments: <String, dynamic>{
+              'android.app.extra.DEVICE_ADMIN':
+              'com.example.employee_tracker/.DeviceAdminReceiver',
+              'android.app.extra.ADD_EXPLANATION':
+              'Enable to protect employee tracking app',
+            },
+            flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
+          );
+
+          await intent.launch();
+        }
+      }
+    } catch (e) {
+      print('Device admin request failed: $e');
+      // Continue anyway - not critical
     }
   }
 
@@ -396,7 +466,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    'This app will track your location during work hours only.',
+                                    'This app will track your location during work hours and run in the background.',
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: Colors.grey.shade600,
