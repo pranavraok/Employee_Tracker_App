@@ -42,11 +42,11 @@ A comprehensive Flutter-based mobile application for real-time employee location
 
 |                     Splash Screen                      |                       Employee Register                        |                        Employee Dashboard                        |
 |:------------------------------------------------------:|:--------------------------------------------------------------:|:----------------------------------------------------------------:|
-| ![Splash Screen](assets/screenshots/splash_screen.png) | ![Employee Register](assets/screenshots/employee_register.png) | ![Employee Dashboard](assets/screenshots/employee_dashboard.png) |
+| <img src="assets/screenshots/splash_screen.png" width="320" alt="Splash Screen" /> | <img src="assets/screenshots/employee_register.png" width="320" alt="Employee Register" /> | <img src="assets/screenshots/employee_dashboard.png" width="320" alt="Employee Dashboard" /> |
 
 |                    Admin Login                     |                      Admin Dashboard                       |                       Location Tracking                        |
 |:--------------------------------------------------:|:----------------------------------------------------------:|:--------------------------------------------------------------:|
-| ![Admin Login](assets/screenshots/admin_login.png) | ![Admin Dashboard](assets/screenshots/admin_dashboard.png) | ![Location Tracking](assets/screenshots/location_tracking.png) |
+| <img src="assets/screenshots/admin_login.png" width="320" alt="Admin Login" /> | <img src="assets/screenshots/admin_dashboard.png" width="320" alt="Admin Dashboard" /> | <img src="assets/screenshots/location_tracking.png" width="320" alt="Location Tracking" /> |
 
 ---
 
