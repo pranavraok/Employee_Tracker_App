@@ -62,7 +62,9 @@ class _EmployeeTrackingScreenState extends State<EmployeeTrackingScreen> {
 
   Future<void> _autoSync() async {
     if (_isSyncing) return;
+
     setState(() => _isSyncing = true);
+
     try {
       await SyncService.syncLocations();
       setState(() => _lastSyncTime = DateTime.now());
@@ -71,6 +73,60 @@ class _EmployeeTrackingScreenState extends State<EmployeeTrackingScreen> {
       print('Auto-sync error: $e');
     } finally {
       setState(() => _isSyncing = false);
+    }
+  }
+
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.logout, color: Colors.red.shade700),
+            const SizedBox(width: 12),
+            const Text('Logout'),
+          ],
+        ),
+        content: const Text(
+          'This will stop tracking and clear your registration. '
+              'You will need to register again. Continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    // Stop foreground service
+    await ForegroundTrackingService.stopService();
+
+    // Clear employee_id from local storage
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('employee_id');
+
+    // Navigate to login screen
+    if (mounted) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/',
+            (route) => false,
+      );
     }
   }
 
@@ -92,6 +148,7 @@ class _EmployeeTrackingScreenState extends State<EmployeeTrackingScreen> {
   @override
   Widget build(BuildContext context) {
     final isActive = WorkHoursService.isWithinWorkHours();
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -110,11 +167,11 @@ class _EmployeeTrackingScreenState extends State<EmployeeTrackingScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // Header (WITHOUT logout button)
+              // Header
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,6 +211,13 @@ class _EmployeeTrackingScreenState extends State<EmployeeTrackingScreen> {
                         ),
                       ],
                     ),
+                    IconButton(
+                      onPressed: _logout,
+                      icon: const Icon(Icons.logout, color: Colors.white),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -188,6 +252,7 @@ class _EmployeeTrackingScreenState extends State<EmployeeTrackingScreen> {
                             color: isActive ? Colors.green : Colors.orange,
                           ),
                         ),
+
                         const SizedBox(height: 30),
 
                         // Status Message
@@ -199,7 +264,9 @@ class _EmployeeTrackingScreenState extends State<EmployeeTrackingScreen> {
                           ),
                           textAlign: TextAlign.center,
                         ),
+
                         const SizedBox(height: 12),
+
                         Text(
                           isActive
                               ? 'Your location is being recorded every 30 seconds.'
@@ -210,6 +277,7 @@ class _EmployeeTrackingScreenState extends State<EmployeeTrackingScreen> {
                           ),
                           textAlign: TextAlign.center,
                         ),
+
                         const SizedBox(height: 40),
 
                         // Sync Status Card
@@ -274,6 +342,7 @@ class _EmployeeTrackingScreenState extends State<EmployeeTrackingScreen> {
                                     ),
                                 ],
                               ),
+
                               if (unsyncedCount > 0) ...[
                                 const SizedBox(height: 12),
                                 Container(
@@ -309,6 +378,7 @@ class _EmployeeTrackingScreenState extends State<EmployeeTrackingScreen> {
                             ],
                           ),
                         ),
+
                         const SizedBox(height: 30),
 
                         // Info Cards
@@ -318,13 +388,16 @@ class _EmployeeTrackingScreenState extends State<EmployeeTrackingScreen> {
                           '9:00 AM - 6:00 PM',
                           Colors.purple,
                         ),
+
                         const SizedBox(height: 12),
+
                         _buildInfoCard(
                           Icons.update,
                           'Update Interval',
                           'Every 30 seconds',
                           Colors.teal,
                         ),
+
                         const SizedBox(height: 30),
 
                         // Important Note
@@ -365,7 +438,16 @@ class _EmployeeTrackingScreenState extends State<EmployeeTrackingScreen> {
           ),
         ),
       ),
-      // NO FLOATING ACTION BUTTON - Admin FAB removed
+
+      // Admin FAB
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(context, '/admin-password');
+        },
+        backgroundColor: Colors.blue.shade700,
+        child: const Icon(Icons.admin_panel_settings),
+        tooltip: 'Admin Access',
+      ),
     );
   }
 
