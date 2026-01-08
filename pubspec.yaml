@@ -67,12 +67,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/logo.png
-    - assets/screenshots/admin_dashboard.png
-    - assets/screenshots/admin_login.png
-    - assets/screenshots/employee_dashboard.png
-    - assets/screenshots/employee_register.png
-    - assets/screenshots/location_tracking.png
-    - assets/screenshots/splash_screen.png
+    - assets/images/
+    - assets/screenshots/
 
 
