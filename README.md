@@ -13,8 +13,6 @@ A comprehensive Flutter-based mobile application for real-time employee location
 - [Configuration](#-configuration)
 - [Usage](#-usage)
 - [Project Structure](#-project-structure)
-- [License](#-license)
-- [Contact](#-contact)
 
 ---
 
