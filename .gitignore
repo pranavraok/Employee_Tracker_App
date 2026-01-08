@@ -165,6 +165,8 @@ test_driver/
 
 # Custom project-specific
 screenshots/
+!assets/screenshots/
+!assets/screenshots/**
 recordings/
 temp/
 tmp/
